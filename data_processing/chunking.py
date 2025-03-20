@@ -7,9 +7,18 @@ from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 from tqdm import tqdm
 from dotenv import load_dotenv
+from chunking_evaluation.chunking import RecursiveTokenChunker
+from chunking_evaluation.utils import openai_token_count
+import chromadb
+from chromadb.utils import embedding_functions
+
 
 # Load environment variables
 load_dotenv()
+
+# Recursive Chunking settings
+CHUNK_SIZE = 400
+CHUNK_OVERLAP = 0
 
 # Load OpenAI API key (if available)
 api_key = os.environ.get("OPENAI_API_KEY")
@@ -88,3 +97,28 @@ def cluster_based_chunking(document, max_chunk_size=300, similarity_threshold=0.
         clusters.append(" ".join(current_chunk))
 
     return clusters
+
+# Main function for recursive chunking
+def recursive_based_chunking(text):
+    """
+    Split document text into chunks using RecursiveTokenChunker.
+    
+    Args:
+        text (str): The document text to chunk
+        
+    Returns:
+        list: List of text chunks
+    """
+    # Initialize the chunker with our configured settings
+    chunker = RecursiveTokenChunker(
+        chunk_size=CHUNK_SIZE,
+        chunk_overlap=CHUNK_OVERLAP,
+        length_function=openai_token_count,
+        separators=["\n\n", "\n", ".", "?", "!", " ", ""]
+    )
+    
+    # Split the text into chunks
+    chunks = chunker.split_text(text)
+    
+    # Return the chunks
+    return chunks
