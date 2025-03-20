@@ -13,7 +13,7 @@ from data_processing.s3_utils import upload_file_to_s3
 
 IMAGE_RESOLUTION_SCALE = 2.0
 
-def process_pdf(file_content: bytes, file_name: str) -> dict:
+def process_pdf_docling(file_content: bytes, file_name: str) -> dict:
     """
     Process a PDF file to extract markdown content and images, and upload them to S3 with a structured naming format.
 

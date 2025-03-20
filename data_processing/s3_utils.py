@@ -99,3 +99,20 @@ def generate_presigned_url(object_key, expiration=3600):
     except NoCredentialsError:
         print("Credentials not available.")
         return None
+    
+def fetch_markdown_from_s3(s3_path):
+    """
+    Reads a Markdown file from S3 into memory.
+    
+    Args:
+        s3_path (str): S3 file path (e.g., "processed/2020Q4/markdown/2020Q4_10-K_with_images.md").
+    
+    Returns:
+        str: Markdown content as a string.
+    """
+    try:
+        obj = s3_client.get_object(Bucket=S3_BUCKET_NAME, Key=s3_path)
+        return obj["Body"].read().decode("utf-8")
+    except Exception as e:
+        print(f"Error fetching {s3_path} from S3: {e}")
+        return None
