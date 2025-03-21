@@ -11,6 +11,7 @@ from chunking_evaluation.chunking import RecursiveTokenChunker
 from chunking_evaluation.utils import openai_token_count
 import chromadb
 from chromadb.utils import embedding_functions
+from chunking_evaluation.chunking import FixedTokenChunker
 
 
 # Load environment variables
@@ -120,5 +121,27 @@ def recursive_based_chunking(text):
     # Split the text into chunks
     chunks = chunker.split_text(text)
     
+    # Return the chunks
+    return chunks
+
+def token_based_chunking(text):
+    """
+    Split document text into chunks using FixedTokenChunker.
+
+    Args:
+        text (str): The document text to chunk
+
+    Returns:
+        list: List of text chunks
+    """
+    chunker = FixedTokenChunker(
+        chunk_size=CHUNK_SIZE,
+        chunk_overlap=CHUNK_OVERLAP,
+        encoding_name="cl100k_base"
+    )
+
+    # Split the text into chunks
+    chunks = chunker.split_text(text)
+
     # Return the chunks
     return chunks

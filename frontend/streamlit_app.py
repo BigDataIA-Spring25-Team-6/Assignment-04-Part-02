@@ -101,7 +101,7 @@ st.session_state["selected_rag_method"] = st.selectbox(
     on_change=reset_session
 )
 
-chunking_strategies = ["Select a Chunking Strategy", "Cluster-based"]
+chunking_strategies = ["Select a Chunking Strategy", "Cluster-based", "Token-based", "Recursive-based"]
 st.session_state["selected_chunking"] = st.selectbox(
     "Choose Chunking Strategy",
     chunking_strategies,
@@ -109,6 +109,7 @@ st.session_state["selected_chunking"] = st.selectbox(
     key="chunking_method",
     on_change=reset_session
 )
+
 
 # === Query Input and Retrieval ===
 st.markdown("### Ask a Question")
@@ -137,7 +138,6 @@ if st.button("🔍 Retrieve Answer"):
             "s3_markdown_path": st.session_state["s3_markdown_path"],
             "top_k": 3
         }
-
         response = requests.post(f"{FASTAPI_URL}/query/", json=query_payload)
 
         if response.status_code == 200:
