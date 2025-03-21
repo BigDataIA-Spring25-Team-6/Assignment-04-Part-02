@@ -4,8 +4,9 @@ import re
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 from dotenv import load_dotenv
-from chunking_evaluation.chunking import RecursiveTokenChunker
+from chunking_evaluation.chunking import RecursiveTokenChunker,FixedTokenChunker
 from chunking_evaluation.utils import openai_token_count
+
 
 
 # Load environment variables
@@ -115,5 +116,27 @@ def recursive_based_chunking(text,max_chunk_size=300, similarity_threshold=0.75)
     # Split the text into chunks
     chunks = chunker.split_text(text)
     
+    # Return the chunks
+    return chunks
+
+def token_based_chunking(text):
+    """
+    Split document text into chunks using FixedTokenChunker.
+
+    Args:
+        text (str): The document text to chunk
+
+    Returns:
+        list: List of text chunks
+    """
+    chunker = FixedTokenChunker(
+        chunk_size=CHUNK_SIZE,
+        chunk_overlap=CHUNK_OVERLAP,
+        encoding_name="cl100k_base"
+    )
+
+    # Split the text into chunks
+    chunks = chunker.split_text(text)
+
     # Return the chunks
     return chunks

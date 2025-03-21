@@ -122,7 +122,7 @@ st.session_state["selected_rag_method"] = st.selectbox(
     on_change=reset_session
 )
 
-chunking_strategies = ["Select a Chunking Strategy", "Cluster-based", "Recursive-based"]
+chunking_strategies = ["Select a Chunking Strategy", "Cluster-based", "Token-based", "Recursive-based"]
 st.session_state["selected_chunking"] = st.selectbox(
     "Choose Chunking Strategy",
     chunking_strategies,
@@ -130,6 +130,7 @@ st.session_state["selected_chunking"] = st.selectbox(
     key="chunking_method",
     on_change=reset_session
 )
+
 
 # === Query Input and Retrieval ===
 st.markdown("### Ask a Question")

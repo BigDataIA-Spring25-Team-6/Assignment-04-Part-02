@@ -4,12 +4,12 @@ from fastapi import FastAPI, File, Form, UploadFile, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from data_processing.naive_rag import naive_rag_pipeline
+from data_processing.pinecone_rag import pinecone_rag_pipeline
 from data_processing.chroma_rag_pipeline import chroma_rag_pipeline
 from data_processing.s3_utils import s3_client, S3_BUCKET_NAME,generate_presigned_url
 from data_processing.pdf_extract_docling import process_pdf_docling
 from data_processing.pdf_extract_mistral import process_pdf_mistral
-from data_processing.chunking import cluster_based_chunking
-from data_processing.chunking import recursive_based_chunking
+from data_processing.chunking import cluster_based_chunking, token_based_chunking,recursive_based_chunking
 
 app = FastAPI()
 
@@ -35,6 +35,7 @@ async def query_rag(request: QueryRequest):
     Handles user queries by dynamically selecting RAG method and chunking strategy.
     Automatically fetches the Markdown S3 path instead of requiring it in the request.
     """
+   
     pdf_name = request.pdf_name
     query = request.query
     rag_method = request.rag_method
@@ -54,9 +55,10 @@ async def query_rag(request: QueryRequest):
     # Select Chunking Method
     chunking_methods = {
         "Cluster-based": cluster_based_chunking,
+        "Token-based": token_based_chunking,
         "Recursive-based": recursive_based_chunking
-        # Future: "Fixed Length": fixed_length_chunking,
     }
+
     
     if chunking_strategy not in chunking_methods:
         return JSONResponse(content={"error": "Invalid chunking strategy selected."}, status_code=400)
@@ -64,7 +66,7 @@ async def query_rag(request: QueryRequest):
     # Select RAG Method (only Naïve RAG for now, Pinecone/ChromaDB future-proofed)
     rag_methods = {
         "Manual Embeddings": naive_rag_pipeline,
-        # Future: "Pinecone": pinecone_rag_pipeline,
+        "Pinecone": pinecone_rag_pipeline,
         "ChromaDB": chroma_rag_pipeline
     }
     if rag_method not in rag_methods:
