@@ -29,3 +29,12 @@ debug.log
 # AWS Credentials & Secrets
 .env
 .aws/
+
+# chromadb
+chroma_db/
+
+#huggingface_cache
+huggingface_cache/
+
+# test scripts
+test/
