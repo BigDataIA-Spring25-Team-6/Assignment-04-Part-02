@@ -13,6 +13,7 @@ The project aims to build an AI-powered information retrieval system that proces
 Refer to the codelabs document for a detailed explanation of the QuickStart.
 
 ### Scope
+```
 The project aims to develop an AI-powered Retrieval-Augmented Generation (RAG) system for processing and retrieving information from NVIDIA quarterly reports using various parsing, chunking, and retrieval methods.
 
 -Automate data ingestion and processing with Apache Airflow.
@@ -20,8 +21,10 @@ The project aims to develop an AI-powered Retrieval-Augmented Generation (RAG) s
 -Develop a RAG pipeline using manual embeddings, Pinecone, and ChromaDB.
 -Build a Streamlit-based user interface for document uploads, queries, and retrieval selection.
 -Deploy the system with Docker, separating Airflow orchestration from the Streamlit + FastAPI querying pipeline.
+```
 
 ## Technologies Used
+```
 -Apache Airflow
 -Docling
 -Mistral OCR
@@ -32,7 +35,9 @@ The project aims to develop an AI-powered Retrieval-Augmented Generation (RAG) s
 -Sentence Transformers
 -Docker
 -AWS S3
--OpenAI GPT  
+-OpenAI GPT
+```
+  
 
 ## Architecture Diagram
 ![image](https://github.com/user-attachments/assets/360ec6d9-2d02-4801-ab6b-fad9950ea999)
