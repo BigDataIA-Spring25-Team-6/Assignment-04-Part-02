@@ -16,6 +16,8 @@ if "selected_rag_method" not in st.session_state:
     st.session_state["selected_rag_method"] = "Select a RAG Method"
 if "selected_chunking" not in st.session_state:
     st.session_state["selected_chunking"] = "Select a Chunking Strategy"
+if "selected_parser" not in st.session_state:
+    st.session_state["selected_parser"] = "Select a Parser"
 if "user_query" not in st.session_state:
     st.session_state["user_query"] = ""
 if "query_response" not in st.session_state:
@@ -28,6 +30,7 @@ def reset_session():
     """Reset session variables when a new PDF is selected, uploaded, or when switching tabs."""
     st.session_state["selected_rag_method"] = "Select a RAG Method"
     st.session_state["selected_chunking"] = "Select a Chunking Strategy"
+    st.session_state["selected_parser"] = "Select a Parser"
     st.session_state["user_query"] = ""
     st.session_state["query_response"] = ""
     st.session_state["question_input_key"] += 1  # Force UI refresh of text input
@@ -44,20 +47,38 @@ if selected_tab != st.session_state["active_tab"]:
 if selected_tab == "New PDF":
     st.markdown("#### Upload New PDF")
     uploaded_file = st.file_uploader("Choose a PDF file", type=["pdf"], key="pdf_upload", on_change=reset_session)
+    
+    parsers = ["Select a Parser", "Docling", "Mistral"]
+    st.session_state["selected_parser"] = st.selectbox(
+        "Choose a Parser",
+        parsers,
+        index=parsers.index(st.session_state.get("selected_parser", "Select a Parser")),
+        key="parser_select",
+        on_change=reset_session
+    )
 
-    if uploaded_file and st.button("Process PDF", on_click=reset_session):
-        st.write("Processing your PDF...")
-
-        files = {"file": uploaded_file}
-        response = requests.post(f"{FASTAPI_URL}/upload_pdf/", files=files)
-
-        if response.status_code == 200:
-            data = response.json()
-            st.success(f"PDF processed successfully!")
-            st.session_state["uploaded_pdf"] = data['pdf_filename']
-            st.session_state["s3_markdown_path"] = data['markdown_s3_url']
+    if uploaded_file and st.session_state["selected_parser"] != "Select a Parser" and st.button("Process PDF", on_click=reset_session):
+        file_size_kb = len(uploaded_file.getbuffer()) / 1024
+        if file_size_kb > 600 and st.session_state.get("selected_parser") == "Mistral":
+            st.warning(
+                f"The uploaded file size is {file_size_kb:.2f} KB, which exceeds the free version limit for Mistral OCR. "
+                f"Please use Docling parser instead."
+            )
         else:
-            st.error(f"Failed to process PDF! Error: {response.text}")
+            st.write("Processing your PDF...")
+
+            files = {"file": uploaded_file}
+            data = {"parser": st.session_state["selected_parser"]}
+            response = requests.post(f"{FASTAPI_URL}/upload_pdf/", files={"file": uploaded_file}, data=data)
+
+            if response.status_code == 200:
+                data = response.json()
+                st.success(f"PDF processed successfully!")
+                st.session_state["uploaded_pdf"] = data['pdf_filename']
+                st.session_state["s3_markdown_path"] = data['markdown_s3_url']
+            else:
+                st.error(f"Failed to process PDF! Error: {response.text}")
+
 
 # === Tab 2: Select a Processed PDF ===
 elif selected_tab == "Processed PDF":
@@ -101,7 +122,7 @@ st.session_state["selected_rag_method"] = st.selectbox(
     on_change=reset_session
 )
 
-chunking_strategies = ["Select a Chunking Strategy", "Cluster-based"]
+chunking_strategies = ["Select a Chunking Strategy", "Cluster-based", "Recursive-based"]
 st.session_state["selected_chunking"] = st.selectbox(
     "Choose Chunking Strategy",
     chunking_strategies,
@@ -135,9 +156,8 @@ if st.button("🔍 Retrieve Answer"):
             "rag_method": st.session_state["selected_rag_method"],
             "chunking_strategy": st.session_state["selected_chunking"],
             "s3_markdown_path": st.session_state["s3_markdown_path"],
-            "top_k": 3
+            "top_k": 5
         }
-
         response = requests.post(f"{FASTAPI_URL}/query/", json=query_payload)
 
         if response.status_code == 200:

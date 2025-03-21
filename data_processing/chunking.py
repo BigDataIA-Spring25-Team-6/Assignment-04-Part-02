@@ -1,16 +1,11 @@
 import os
 import json
-import nltk
 import re
-import numpy as np
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
-from tqdm import tqdm
 from dotenv import load_dotenv
 from chunking_evaluation.chunking import RecursiveTokenChunker
 from chunking_evaluation.utils import openai_token_count
-import chromadb
-from chromadb.utils import embedding_functions
 
 
 # Load environment variables
@@ -99,7 +94,7 @@ def cluster_based_chunking(document, max_chunk_size=300, similarity_threshold=0.
     return clusters
 
 # Main function for recursive chunking
-def recursive_based_chunking(text):
+def recursive_based_chunking(text,max_chunk_size=300, similarity_threshold=0.75):
     """
     Split document text into chunks using RecursiveTokenChunker.
     

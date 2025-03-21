@@ -1,13 +1,11 @@
 from mistralai import Mistral
 from pathlib import Path
-from mistralai import DocumentURLChunk, ImageURLChunk, TextChunk
+from mistralai import DocumentURLChunk
 from mistralai.models import OCRResponse
-import json
 from dotenv import load_dotenv
 import os
 from data_processing.s3_utils import upload_file_to_s3
 import logging
-import base64
 from uuid import uuid4
 
 # load environment variables
@@ -131,8 +129,19 @@ def process_pdf_mistral(file_content: bytes, file_name: str) -> dict:
         logging.debug(f"Markdown uploaded to S3: {markdown_s3_url}")
 
         # Clean up temporary files
-        os.remove(temp_pdf_path)
-        os.remove(temp_markdown_path)
+        if temp_pdf_path.exists():
+            logging.debug(f"Deleting temporary PDF file: {temp_pdf_path}")
+            os.remove(temp_pdf_path)
+            logging.debug(f"Temporary PDF file deleted: {temp_pdf_path}")
+        if temp_markdown_path.exists():
+            logging.debug(f"Deleting temporary Markdown file: {temp_markdown_path}")
+            os.remove(temp_markdown_path)
+            logging.debug(f"Temporary Markdown file deleted: {temp_markdown_path}")
+        if image_dir.exists() and len(list(image_dir.iterdir())) == 0:
+            logging.debug(f"Deleting empty image directory: {image_dir}")
+            os.rmdir(image_dir)
+            logging.debug(f"Empty image directory deleted: {image_dir}")
+
         logging.debug("Temporary files cleaned up.")
 
         # Step 7: Return success response

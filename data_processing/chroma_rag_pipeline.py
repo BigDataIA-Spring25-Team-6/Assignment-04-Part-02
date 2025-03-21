@@ -1,14 +1,9 @@
 import os
 import requests
-import numpy as np
-from sentence_transformers import SentenceTransformer
-from chunking_evaluation.chunking import RecursiveTokenChunker
-from chunking_evaluation.utils import openai_token_count
 from dotenv import load_dotenv
 import chromadb
 from chromadb.utils import embedding_functions
 from openai import OpenAI
-from pathlib import Path
 from data_processing.chunking import cluster_based_chunking,recursive_based_chunking
 
 # Load API Key
@@ -19,8 +14,6 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 COLLECTION_NAME = "rag_documents"
 PERSIST_DIRECTORY = "./chroma_db"
 
-# Retrieval settings
-TOP_K = 5
 
 def get_or_create_collection():
     """
@@ -90,7 +83,7 @@ def add_chunks_to_collection(chunks, markdown_file_path):
     return len(chunks)
 
 
-def retrieve_relevant_chunks(query,metadata_filter=None,distance_threshold=0.7):
+def retrieve_relevant_chunks(query,metadata_filter=None,distance_threshold=0.7,top_k=5):
     """
     Retrieve the most relevant document chunks for a query.
     
@@ -103,16 +96,14 @@ def retrieve_relevant_chunks(query,metadata_filter=None,distance_threshold=0.7):
     """
     # Get the collection
     collection = get_or_create_collection()
-    print(f"metadata_filter in retrieve: {metadata_filter}")
     if metadata_filter and "source" in metadata_filter:
         metadata_filter["source"] = metadata_filter["source"].replace("/", "_").replace(".", "_")
     
-    print(f"metadata_filter: {metadata_filter}")
     
     # Query the collection for similar chunks
     results = collection.query(
         query_texts=[query],
-        n_results=TOP_K,
+        n_results=top_k,
         include=["documents", "metadatas", "distances"],
         where=metadata_filter
     )
@@ -194,7 +185,7 @@ def generate_response(query, chunks, sources):
         print(f"Error generating response: {e}")
         return f"Error generating response: {str(e)}"
 
-def chroma_rag_pipeline(s3_markdown_path, query, chunking_strategy):
+def chroma_rag_pipeline(s3_markdown_path, query, chunking_strategy,top_k):
     """
     Full Chroma RAG pipeline: Retrieve relevant chunks & generate GPT-4 response.
     """
@@ -225,7 +216,7 @@ def chroma_rag_pipeline(s3_markdown_path, query, chunking_strategy):
 
     # Retrieve relevant chunks
     print(f"\nStep 4: Retrieving relevant chunks for query: '{query}'")
-    relevant_chunks, sources = retrieve_relevant_chunks(query, metadata_filter={"source": s3_markdown_path})
+    relevant_chunks, sources = retrieve_relevant_chunks(query, metadata_filter={"source": s3_markdown_path},top_k=top_k)
 
     # Generate response using OpenAI's GPT-4
     if relevant_chunks:

@@ -21,7 +21,7 @@ def compute_and_store_embeddings(chunks):
     embeddings = embedding_model.encode(chunks, convert_to_numpy=True)
     return {"chunks": chunks, "embeddings": embeddings}
 
-def retrieve_relevant_chunks(query, chunk_store, top_k=3, threshold=0.4):
+def retrieve_relevant_chunks(query, chunk_store, top_k=5, threshold=0.4):
     """
     Retrieve the most relevant chunks using cosine similarity.
     """
@@ -70,7 +70,7 @@ def generate_llm_response(relevant_chunks, query):
     except openai.OpenAIError as e:
         return f"OpenAI API Error: {e}"
 
-def naive_rag_pipeline(s3_markdown_path, query, chunking_strategy, top_k=3):
+def naive_rag_pipeline(s3_markdown_path, query, chunking_strategy, top_k=5):
     """
     Full RAG pipeline: Retrieve relevant chunks & generate GPT-4 response.
     """

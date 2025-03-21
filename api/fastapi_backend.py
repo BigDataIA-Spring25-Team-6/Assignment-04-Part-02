@@ -1,12 +1,15 @@
 from pydantic import BaseModel
 import uvicorn
-from fastapi import FastAPI, File, Form, UploadFile
+from fastapi import FastAPI, File, Form, UploadFile, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from data_processing.naive_rag import naive_rag_pipeline
+from data_processing.chroma_rag_pipeline import chroma_rag_pipeline
 from data_processing.s3_utils import s3_client, S3_BUCKET_NAME,generate_presigned_url
 from data_processing.pdf_extract_docling import process_pdf_docling
+from data_processing.pdf_extract_mistral import process_pdf_mistral
 from data_processing.chunking import cluster_based_chunking
+from data_processing.chunking import recursive_based_chunking
 
 app = FastAPI()
 
@@ -24,7 +27,7 @@ class QueryRequest(BaseModel):
     rag_method: str
     chunking_strategy: str
     s3_markdown_path: str = None
-    top_k: int = 3
+    top_k: int = 5
 
 @app.post("/query/")
 async def query_rag(request: QueryRequest):
@@ -51,7 +54,7 @@ async def query_rag(request: QueryRequest):
     # Select Chunking Method
     chunking_methods = {
         "Cluster-based": cluster_based_chunking,
-        # Future: "Sentence-based": sentence_based_chunking,
+        "Recursive-based": recursive_based_chunking
         # Future: "Fixed Length": fixed_length_chunking,
     }
     
@@ -62,9 +65,8 @@ async def query_rag(request: QueryRequest):
     rag_methods = {
         "Manual Embeddings": naive_rag_pipeline,
         # Future: "Pinecone": pinecone_rag_pipeline,
-        # Future: "ChromaDB": chromadb_rag_pipeline,
+        "ChromaDB": chroma_rag_pipeline
     }
-
     if rag_method not in rag_methods:
         return JSONResponse(content={"error": f"Invalid RAG method: {rag_method}"}, status_code=400)
 
@@ -81,8 +83,8 @@ async def upload_pdf(file: UploadFile = File(...), parser: str = Form(...)):
     
     # Mapping of parsing methods
     parsing_methods = {
-        "docling": process_pdf_docling,
-        # "mistral": process_pdf_mistral
+        "Docling": process_pdf_docling,
+        "Mistral": process_pdf_mistral
     }
 
     try:
@@ -95,11 +97,19 @@ async def upload_pdf(file: UploadFile = File(...), parser: str = Form(...)):
 
         # Call the selected parser function dynamically
         result = parsing_methods[parser](file_content, file.filename)
+        markdown_s3_url = result["markdown_s3_url"]
+        s3_base_url = f"https://{S3_BUCKET_NAME}.s3.amazonaws.com/"
+        if markdown_s3_url.startswith(s3_base_url):
+            object_key = markdown_s3_url.replace(s3_base_url, "")
+            signed_url = generate_presigned_url(object_key)
+            if not signed_url:
+                raise HTTPException(status_code=500, detail="Failed to generate signed URL.")
+            markdown_s3_url = signed_url
 
         # Step 3: Return the S3 URLs and other details
         return {
             "message": result["message"],
-            "markdown_s3_url": result["markdown_s3_url"],  # Markdown URL
+            "markdown_s3_url": markdown_s3_url,  # Markdown URL
             "image_s3_urls": result["image_s3_urls"],      # List of Image URLs
             "pdf_filename": result["pdf_filename"],        # Filename without extension (used for grouping)
             "status": result["status"]
