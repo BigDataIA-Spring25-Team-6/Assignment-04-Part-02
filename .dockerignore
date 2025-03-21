@@ -1,0 +1,15 @@
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.env
+*.log
+.git
+.gitignore
+.DS_Store
+chroma_db/
+huggingface_cache/
+test/
