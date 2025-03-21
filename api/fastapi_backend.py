@@ -1,10 +1,11 @@
+import re
 from pydantic import BaseModel
 import uvicorn
 from fastapi import FastAPI, File, Form, UploadFile, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from data_processing.naive_rag import naive_rag_pipeline
-from data_processing.pinecone_rag import pinecone_rag_pipeline
+from data_processing.pinecone_rag import generate_response, pinecone_rag_pipeline, retrieve_relevant_chunks
 from data_processing.chroma_rag_pipeline import chroma_rag_pipeline
 from data_processing.s3_utils import s3_client, S3_BUCKET_NAME,generate_presigned_url
 from data_processing.pdf_extract_docling import process_pdf_docling
@@ -20,6 +21,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+class FullContextQuery(BaseModel):
+    query: str
+    top_k: int = 5
 
 class QueryRequest(BaseModel):
     pdf_name: str
@@ -146,6 +151,44 @@ async def select_pdfcontent():
                         pdf_files[pdf_name]["images"].append(generate_presigned_url(object_key))
 
         return {"processed_pdfs": pdf_files}
+
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=500)
+    
+
+@app.post("/query_full_context/")
+async def query_full_context(request: FullContextQuery):
+    query = request.query
+    top_k = request.top_k
+
+    # QUARTER_REGEX = re.compile(r"(20\d{2})[- ]?(Q[1-4])", re.IGNORECASE)
+    QUARTER_REGEX = re.compile(r"(20\d{2})(?:[- ]?)?(Q[1-4])", re.IGNORECASE)
+
+
+    def extract_quarter(query: str) -> str | None:
+        match = QUARTER_REGEX.search(query)
+        if match:
+            year, quarter = match.groups()
+            return f"{year.upper()}{quarter.upper()}"
+        return None
+
+    try:
+        # Step 1: Extract quarter from query
+        quarter = extract_quarter(query)
+        print(quarter)
+        print({"quarter": {"$eq": quarter}})
+
+        retrieved_chunks, sources = retrieve_relevant_chunks(query, metadata_filter={"quarter": {"$eq": quarter}}, top_k=top_k)
+        print(retrieved_chunks)
+        print(sources)
+        result = generate_response(query, retrieved_chunks, sources)
+
+        # Step 3: Return result and optionally matched chunks (if available)
+        return {
+            # "response": result["answer"],
+            "response": result
+            # "matches": result.get("matches", [])  # optional: list of top matching chunks
+        }
 
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)

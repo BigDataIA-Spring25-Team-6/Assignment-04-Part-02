@@ -1,4 +1,5 @@
 import os
+import re
 import requests
 from pinecone import Pinecone, ServerlessSpec
 import openai
@@ -35,6 +36,14 @@ def get_or_create_index():
         print(f"Created new index: {INDEX_NAME}")
     return pc.Index(INDEX_NAME)
 
+QUARTER_REGEX = re.compile(r"(20\d{2})(?:[- ]?)?(Q[1-4])", re.IGNORECASE)
+
+def extract_quarter(query: str) -> str | None:
+    match = QUARTER_REGEX.search(query)
+    if match:
+        year, quarter = match.groups()
+        return f"{year.upper()}{quarter.upper()}"
+    return None
 
 def add_chunks_to_pinecone(chunks, markdown_file_path):
     """
@@ -46,7 +55,7 @@ def add_chunks_to_pinecone(chunks, markdown_file_path):
 
     embeddings = embed_texts(chunks)
     ids = [f"{markdown_file_path}_chunk_{i}" for i in range(len(chunks))]
-    metadatas = [{"source": markdown_file_path, "chunk_index": i, "text": chunks[i]} for i in range(len(chunks))]
+    metadatas = [{"source": markdown_file_path, "chunk_index": i, "text": chunks[i], "quarter": extract_quarter(markdown_file_path)} for i in range(len(chunks))]
 
     index.upsert(vectors=[(ids[i], embeddings[i].tolist(), metadatas[i]) for i in range(len(chunks))])
     return len(chunks)
