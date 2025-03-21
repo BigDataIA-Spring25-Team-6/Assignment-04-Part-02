@@ -46,6 +46,9 @@ The project aims to develop an AI-powered Retrieval-Augmented Generation (RAG) s
 ## Codelabs Documentation
 (https://codelabs-preview.appspot.com/?file_id=1FBrWZohwD3lDmmtl6bf-iy8wjwyqE9AVYGAozQyiXOU#0)
 
+## Demo
+https://shorturl.at/xOWKm
+
 ## Hosted Applications links 
 - Frontend : https://frontend-487006321216.us-central1.run.app
 - Backend : https://backend-487006321216.us-central1.run.app
