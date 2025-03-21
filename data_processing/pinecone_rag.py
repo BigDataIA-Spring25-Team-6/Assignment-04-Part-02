@@ -3,7 +3,7 @@ import requests
 from pinecone import Pinecone, ServerlessSpec
 import openai
 from dotenv import load_dotenv
-from data_processing.chunking import embedding_model, cluster_based_chunking, token_based_chunking
+from data_processing.chunking import embedding_model, cluster_based_chunking, recursive_based_chunking, token_based_chunking
 import inspect
 
 # Load environment variables
@@ -119,8 +119,8 @@ def pinecone_rag_pipeline(s3_markdown_path, query, chunking_strategy,top_k):
 
     chunking_methods = {
         "Cluster-based": cluster_based_chunking,
-        # "Recursive-based": recursive_based_chunking,
-        "Token-based": token_based_chunking
+        "Token-based": token_based_chunking,
+        "Recursive-based": recursive_based_chunking
     }
 
     if chunking_strategy not in chunking_methods:

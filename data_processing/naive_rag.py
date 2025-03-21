@@ -2,7 +2,7 @@ import openai
 import os
 import requests
 from dotenv import load_dotenv
-from data_processing.chunking import cluster_based_chunking
+from data_processing.chunking import cluster_based_chunking, recursive_based_chunking, token_based_chunking
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
@@ -85,8 +85,8 @@ def naive_rag_pipeline(s3_markdown_path, query, chunking_strategy, top_k=5):
     # Select chunking method
     chunking_methods = {
         "Cluster-based": cluster_based_chunking,
-        # Future: "Sentence-based": sentence_based_chunking,
-        # Future: "Fixed Length": fixed_length_chunking,
+        "Token-based": token_based_chunking,
+        "Recursive-based": recursive_based_chunking
     }
 
     if chunking_strategy not in chunking_methods:
