@@ -46,6 +46,7 @@ The project aims to develop an AI-powered Retrieval-Augmented Generation (RAG) s
 - Backend : https://backend-487006321216.us-central1.run.app
 
 ## Prerequisites
+```
 -Python 3.10+
 -Docker installed and running
 -Docker Compose installed
@@ -55,7 +56,9 @@ The project aims to develop an AI-powered Retrieval-Augmented Generation (RAG) s
 -Streamlit installed
 -FastAPI framework
 -Apache Airflow setup
--Virtual environment  
+-Virtual environment
+```
+  
 
 ## Set Up the Environment
 ```sh
