@@ -149,7 +149,6 @@ def pinecone_rag_pipeline(s3_markdown_path, query, chunking_strategy,top_k):
     
     return generate_response(query, retrieved_chunks, sources)
 
-
 def pinecone_rag_airflow(s3_markdown_path, s3_content, chunking_strategy):
 
     document_text = s3_content

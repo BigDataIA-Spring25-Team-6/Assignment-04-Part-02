@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 
-FASTAPI_URL = "http://127.0.0.1:8000"
+FASTAPI_URL = "https://backend-487006321216.us-central1.run.app"
 
 st.title("📄 AI-Powered Financial Report Assistant")
 
@@ -36,7 +36,7 @@ def reset_session():
     st.session_state["question_input_key"] += 1  # Force UI refresh of text input
 
 # === Tabs for Uploading & Selecting PDFs ===
-selected_tab = st.radio("Select an option:", ["New PDF", "Processed PDF"], horizontal=True)
+selected_tab = st.radio("Select an option:", ["New PDF", "Processed PDF","Query Full Data"], horizontal=True)
 
 # Reset session state when switching tabs
 if selected_tab != st.session_state["active_tab"]:
@@ -110,60 +110,81 @@ elif selected_tab == "Processed PDF":
 
                 st.download_button("Download Markdown", st.session_state["s3_markdown_path"], file_name=f"{selected_pdf}.md")
 
-# === Configure RAG Retrieval ===
-st.markdown("### Configure RAG Retrieval")
+if selected_tab != "Query Full Data":
 
-rag_methods = ["Select a RAG Method", "Manual Embeddings", "Pinecone", "ChromaDB"]
-st.session_state["selected_rag_method"] = st.selectbox(
-    "Choose RAG Method",
-    rag_methods,
-    index=rag_methods.index(st.session_state["selected_rag_method"]),
-    key="rag_method",
-    on_change=reset_session
-)
+    # === Configure RAG Retrieval ===
+    st.markdown("### Configure RAG Retrieval")
 
-chunking_strategies = ["Select a Chunking Strategy", "Cluster-based", "Token-based", "Recursive-based"]
-st.session_state["selected_chunking"] = st.selectbox(
-    "Choose Chunking Strategy",
-    chunking_strategies,
-    index=chunking_strategies.index(st.session_state["selected_chunking"]),
-    key="chunking_method",
-    on_change=reset_session
-)
+    rag_methods = ["Select a RAG Method", "Manual Embeddings", "Pinecone", "ChromaDB"]
+    st.session_state["selected_rag_method"] = st.selectbox(
+        "Choose RAG Method",
+        rag_methods,
+        index=rag_methods.index(st.session_state["selected_rag_method"]),
+        key="rag_method",
+        on_change=reset_session
+    )
+
+    chunking_strategies = ["Select a Chunking Strategy", "Cluster-based", "Token-based", "Recursive-based"]
+    st.session_state["selected_chunking"] = st.selectbox(
+        "Choose Chunking Strategy",
+        chunking_strategies,
+        index=chunking_strategies.index(st.session_state["selected_chunking"]),
+        key="chunking_method",
+        on_change=reset_session
+    )
 
 
-# === Query Input and Retrieval ===
-st.markdown("### Ask a Question")
+    # === Query Input and Retrieval ===
+    st.markdown("### Ask a Question")
 
-user_query = st.text_input(
-    "Ask a question about the document:",
-    value=st.session_state["user_query"],
-    key=f"question_input_{st.session_state['question_input_key']}"
-)
+    user_query = st.text_input(
+        "Ask a question about the document:",
+        value=st.session_state["user_query"],
+        key=f"question_input_{st.session_state['question_input_key']}"
+    )
 
-if st.button("🔍 Retrieve Answer"):
-    if not st.session_state["uploaded_pdf"]:
-        st.error("No PDF selected. Please upload or choose a processed PDF.")
-    elif st.session_state["selected_rag_method"] == "Select a RAG Method":
-        st.error("Please select a RAG Method.")
-    elif st.session_state["selected_chunking"] == "Select a Chunking Strategy":
-        st.error("Please select a Chunking Strategy.")
-    elif not user_query:
-        st.error("Please enter a query.")
-    else:
-        query_payload = {
-            "pdf_name": st.session_state["uploaded_pdf"],
-            "query": user_query,
-            "rag_method": st.session_state["selected_rag_method"],
-            "chunking_strategy": st.session_state["selected_chunking"],
-            "s3_markdown_path": st.session_state["s3_markdown_path"],
-            "top_k": 5
+    if st.button("🔍 Retrieve Answer"):
+        if not st.session_state["uploaded_pdf"]:
+            st.error("No PDF selected. Please upload or choose a processed PDF.")
+        elif st.session_state["selected_rag_method"] == "Select a RAG Method":
+            st.error("Please select a RAG Method.")
+        elif st.session_state["selected_chunking"] == "Select a Chunking Strategy":
+            st.error("Please select a Chunking Strategy.")
+        elif not user_query:
+            st.error("Please enter a query.")
+        else:
+            query_payload = {
+                "pdf_name": st.session_state["uploaded_pdf"],
+                "query": user_query,
+                "rag_method": st.session_state["selected_rag_method"],
+                "chunking_strategy": st.session_state["selected_chunking"],
+                "s3_markdown_path": st.session_state["s3_markdown_path"],
+                "top_k": 5
+            }
+            response = requests.post(f"{FASTAPI_URL}/query/", json=query_payload)
+
+            if response.status_code == 200:
+                result = response.json()["response"]
+                st.success("Answer Retrieved:")
+                st.text_area("Query Response", result, height=300, disabled=True)
+            else:
+                st.error(f"Failed to retrieve an answer: {response.json().get('error', 'Unknown error')}")
+
+elif selected_tab=="Query Full Data":
+    # Querying the full data from pinecone
+    st.markdown("#### Query Pinecone Database")
+    user_query_pinecone = st.text_input(
+        "Enter your query:",
+        value="",
+        key="pinecone_query_input"
+    )
+    if user_query_pinecone and st.button("🔍 Retrieve Answer"):
+        query_payload_pinecone = {
+            "query": user_query_pinecone,
+            "top_k": 5  
         }
-        response = requests.post(f"{FASTAPI_URL}/query/", json=query_payload)
-
+        response = requests.post(f"{FASTAPI_URL}/query_full_context/", json=query_payload_pinecone)
         if response.status_code == 200:
             result = response.json()["response"]
             st.success("Answer Retrieved:")
             st.text_area("Query Response", result, height=300, disabled=True)
-        else:
-            st.error(f"Failed to retrieve an answer: {response.json().get('error', 'Unknown error')}")

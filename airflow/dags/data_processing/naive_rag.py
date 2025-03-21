@@ -114,8 +114,8 @@ def naive_embedding_airflow(s3_content, chunking_strategy):
     # Select chunking method
     chunking_methods = {
         "Cluster-based": cluster_based_chunking,
-        # Future: "Sentence-based": sentence_based_chunking,
-        # Future: "Fixed Length": fixed_length_chunking,
+        "Token-based": token_based_chunking,
+        "Recursive-based": recursive_based_chunking
     }
 
     if chunking_strategy not in chunking_methods:
