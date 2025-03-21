@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 import chromadb
 from chromadb.utils import embedding_functions
 from openai import OpenAI
-from data_processing.chunking import cluster_based_chunking,recursive_based_chunking
+from data_processing.chunking import cluster_based_chunking,recursive_based_chunking,token_based_chunking
 
 # Load API Key
 load_dotenv()
@@ -200,7 +200,8 @@ def chroma_rag_pipeline(s3_markdown_path, query, chunking_strategy,top_k):
     # Select chunking method
     chunking_methods = {
         "Cluster-based": cluster_based_chunking,
-        "Recursive-based": recursive_based_chunking,
+        "Token-based": token_based_chunking,
+        "Recursive-based": recursive_based_chunking
         # Future: "Fixed Length": fixed_length_chunking,
     }
 

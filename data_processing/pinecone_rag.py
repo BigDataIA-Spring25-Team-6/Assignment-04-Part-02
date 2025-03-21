@@ -118,10 +118,9 @@ def pinecone_rag_pipeline(s3_markdown_path, query, chunking_strategy,top_k):
     document_text = response.text
 
     chunking_methods = {
-        "Cluster-based": cluster_based_chunking,
-        # "Recursive-based": recursive_based_chunking,
-        "Token-based": token_based_chunking
-    }
+         "Cluster-based": cluster_based_chunking,
+         "Token-based": token_based_chunking
+     }
 
     if chunking_strategy not in chunking_methods:
         return "Invalid chunking strategy selected."
