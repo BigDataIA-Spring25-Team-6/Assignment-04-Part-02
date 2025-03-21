@@ -225,3 +225,23 @@ def chroma_rag_pipeline(s3_markdown_path, query, chunking_strategy,top_k):
     else:
         return "No relevant information found to answer the query."
 
+def chroma_rag_airflow(s3_markdown_path, s3_content, chunking_strategy):
+
+    document_text = s3_content
+
+    # Select chunking method
+    chunking_methods = {
+        "Cluster-based": cluster_based_chunking,
+        "Token-based": token_based_chunking,
+        "Recursive-based": recursive_based_chunking
+    }
+
+    if chunking_strategy not in chunking_methods:
+        return "Invalid chunking strategy selected."
+
+    # Apply selected chunking strategy
+    chunks = chunking_methods[chunking_strategy](document_text, max_chunk_size=300)
+
+    # Add chunks to the ChromaDB collection
+    num_added = add_chunks_to_collection(chunks, s3_markdown_path)
+    print(f"Added {num_added} chunks to vector store")

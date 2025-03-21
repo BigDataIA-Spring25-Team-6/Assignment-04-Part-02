@@ -105,3 +105,28 @@ def naive_rag_pipeline(s3_markdown_path, query, chunking_strategy, top_k=5):
     response = generate_llm_response(relevant_chunks, query)
 
     return response
+
+
+def naive_embedding_airflow(s3_content, chunking_strategy):
+
+    document_text = s3_content
+
+    # Select chunking method
+    chunking_methods = {
+        "Cluster-based": cluster_based_chunking,
+        # Future: "Sentence-based": sentence_based_chunking,
+        # Future: "Fixed Length": fixed_length_chunking,
+    }
+
+    if chunking_strategy not in chunking_methods:
+        return "Invalid chunking strategy selected."
+
+    # Apply selected chunking strategy
+    chunks = chunking_methods[chunking_strategy](document_text, max_chunk_size=300)
+
+    print("Chunks Created")
+    # Compute and store embeddings
+    chunk_store = compute_and_store_embeddings(chunks)
+
+    print("Chunk Store")
+    return chunk_store

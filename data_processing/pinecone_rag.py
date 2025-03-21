@@ -139,3 +139,25 @@ def pinecone_rag_pipeline(s3_markdown_path, query, chunking_strategy,top_k):
 
     
     return generate_response(query, retrieved_chunks, sources)
+
+
+def pinecone_rag_airflow(s3_markdown_path, s3_content, chunking_strategy):
+
+    document_text = s3_content
+
+    chunking_methods = {
+        "Cluster-based": cluster_based_chunking,
+        "Token-based": token_based_chunking,
+        "Recursive-based": recursive_based_chunking
+    }
+
+    if chunking_strategy not in chunking_methods:
+        return "Invalid chunking strategy selected."
+
+    chunking_function = chunking_methods[chunking_strategy]
+    if "max_chunk_size" in inspect.signature(chunking_function).parameters:
+        chunks = chunking_function(document_text, max_chunk_size=300)
+    else:
+        chunks = chunking_function(document_text)
+
+    add_chunks_to_pinecone(chunks, s3_markdown_path)
