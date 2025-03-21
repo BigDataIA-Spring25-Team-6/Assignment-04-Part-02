@@ -1,0 +1,14 @@
+uvicorn
+fastapi
+python-dotenv
+chromadb
+openai
+requests
+sentence-transformers
+scikit-learn
+selenium
+mistralai
+pinecone
+chromadb
+boto3
+git+https://github.com/brandonstarxel/chunking_evaluation.git
